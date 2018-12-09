@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<server>
+	<portNumber>3333</portNumber>
+	<connectionTimeout>15</connectionTimeout>
+</server>
