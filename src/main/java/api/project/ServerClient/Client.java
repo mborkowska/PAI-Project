@@ -26,14 +26,15 @@ public class Client implements ActionListener {
 	JButton MoveDown = new JButton("Move Down");
 	JButton MoveRight = new JButton("Move Right");
 	JButton MoveLeft = new JButton("Move Left");
+	JButton ExitGame = new JButton("Exit Game");
 	JFrame gameFrame;
 	JTextArea gameTextArea = new JTextArea();
 
+	listenForInput listener;
 	Socket s;
 	ObjectInputStream oin;
 	ObjectOutputStream oout;
 	public String username;
-	Boolean shouldRun = true;
 
 	public static void main(String[] args) {
 		new Client();
@@ -62,6 +63,12 @@ public class Client implements ActionListener {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				listener.terminate();
+				/*try {
+					listener.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}*/
 			}
 		});
 		Panel p = new Panel();
@@ -78,7 +85,7 @@ public class Client implements ActionListener {
 		gameFrame = new JFrame(username + "'s game");
 		gameFrame.setSize(500, 500);
 		gameFrame.setLocationRelativeTo(null);
-		gameFrame.addWindowListener(new WindowAdapter() {
+		/*gameFrame.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent windowEvent) {
 				Packet p = new Packet();
@@ -89,12 +96,13 @@ public class Client implements ActionListener {
 					e.printStackTrace();
 				}
 			}
-		});
+		});*/
 		Panel gameP = new Panel();
 		MoveDown.addActionListener(this);
 		MoveUp.addActionListener(this);
 		MoveLeft.addActionListener(this);
 		MoveRight.addActionListener(this);
+		ExitGame.addActionListener(this);
 		gameTextArea.setEditable(false);
 		JScrollPane gameAreaScrollPane = new JScrollPane(gameTextArea);
 		gameAreaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -104,6 +112,7 @@ public class Client implements ActionListener {
 		gameP.add(MoveUp);
 		gameP.add(MoveLeft);
 		gameP.add(MoveRight);
+		gameP.add(ExitGame);
 		gameFrame.add(gameP);
 	}
 
@@ -124,7 +133,8 @@ public class Client implements ActionListener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		new listenForInput().start();
+		listener = new listenForInput();
+		listener.start();
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -148,7 +158,11 @@ public class Client implements ActionListener {
 			p.type = Packet.Type.MOVE;
 			p.direction = Direction.RIGHT;
 		}
-		
+		if (e.getSource() == ExitGame) {
+			p.type = Packet.Type.EXIT;
+			gameFrame.setVisible(false);
+		}
+
 		try {
 			oout.writeObject(p);
 			oout.flush();
@@ -159,6 +173,12 @@ public class Client implements ActionListener {
 	}
 
 	public class listenForInput extends Thread {
+		private boolean shouldRun = true;
+
+		public void terminate() {
+			shouldRun = false;
+		}
+
 		public void run() {
 			while (shouldRun) {
 				try {
@@ -166,12 +186,12 @@ public class Client implements ActionListener {
 					if (p.type == Packet.Type.MESSAGE) {
 						textArea.append(p.message + "\n");
 					}
-					if(p.type == Packet.Type.PLAY) {
+					if (p.type == Packet.Type.PLAY) {
 						gameFrame.setVisible(true);
 						gameTextArea.setText(null);
 						gameTextArea.append(p.message + "\n");
 					}
-					if(p.type == Packet.Type.BOARD_UPDATE) {
+					if (p.type == Packet.Type.BOARD_UPDATE) {
 						gameTextArea.setText(null);
 						gameTextArea.append(p.message + "\n");
 					}
@@ -179,6 +199,14 @@ public class Client implements ActionListener {
 				} catch (ClassNotFoundException | IOException e) {
 					e.printStackTrace();
 				}
+			}
+			try {
+				System.out.println("Streams closing properly");
+				oin.close();
+				oout.close();
+				s.close();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 	}

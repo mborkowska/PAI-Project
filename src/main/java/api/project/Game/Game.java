@@ -28,9 +28,11 @@ public class Game {
 	public synchronized void removePlayer(ServerConnection sc) {
 		if (playersConnections.remove(sc)) {
 			setCurrentPlayer(sc);
-			board.setAt(players.get(currentPlayer).position.getX(), players.get(currentPlayer).position.getY(), fieldType.BLANK);
+			board.setAt(players.get(currentPlayer).position.getX(), players.get(currentPlayer).position.getY(),
+					fieldType.BLANK);
 			players.remove(currentPlayer);
-			if(players.size() == 0) endGame();
+			if (players.size() == 0)
+				endGame();
 		}
 	}
 
@@ -42,19 +44,19 @@ public class Game {
 	public synchronized void startGame() {
 		board = new Board(20, 20);
 		isRunning = true;
-		for(int i = 0; i < monsterAmount; i++) {
+		for (int i = 0; i < monsterAmount; i++) {
 			monsters.add(new SpawnMonster());
 			monsters.get(i).start();
 		}
 	}
-	
+
 	private synchronized void endGame() {
-		monstersShouldExist = false;
+		System.out.println("Game is ending");
 		isRunning = false;
-		for(int i = 0; i < monsterAmount; i++) {
-			monsters.get(i).interrupt();
-			monsters.remove(i);
+		for (int i = 0; i < monsters.size(); i++) {
+			monsters.get(i).terminate();
 		}
+		monsters.clear();
 	}
 
 	private void setCurrentPlayer(ServerConnection sc) {
@@ -65,8 +67,12 @@ public class Game {
 	}
 
 	public class SpawnMonster extends Thread {
-		boolean exists = true;
-		
+		private boolean shouldRun = true;
+
+		public void terminate() {
+			shouldRun = false;
+		}
+
 		public void run() {
 			Monster monster = new Monster();
 			addCharacter(monster);
@@ -75,16 +81,16 @@ public class Game {
 			int move;
 			Packet p;
 			Direction dir = null;
-			while (monstersShouldExist && exists) {
+			while (shouldRun) {
 				sleep = rand.nextInt((2000 - 1000) + 1) + 1000; // random between 1s and 2s
 				try {
 					Thread.sleep(sleep);
-					if (monster.alive = false) {
-						exists = false;
-						throw new InterruptedException();
+					if (!monster.alive) {
+						terminate();
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
+					terminate();
 				}
 				move = rand.nextInt((4 - 1) + 1) + 1;
 				switch (move) {

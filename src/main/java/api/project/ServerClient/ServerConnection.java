@@ -70,6 +70,7 @@ public class ServerConnection extends Thread {
 						textArea.append(returnPacket.message);
 						sendPacketToClient(returnPacket);
 						sendPacketToOtherClients(returnPacket);
+						shouldRun = false;
 					}
 					if (p.type == Packet.Type.MESSAGE) {
 						textArea.append(this.username + ": " + p.message);
