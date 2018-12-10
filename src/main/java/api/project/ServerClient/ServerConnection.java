@@ -32,7 +32,6 @@ public class ServerConnection extends Thread {
 			oout.reset();
 			oout.writeObject(packet);
 			oout.flush();
-			System.out.println();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -94,7 +93,9 @@ public class ServerConnection extends Thread {
 						sendPacketToClient(returnPacket);
 						sendPacketToOtherClients(returnPacket);
 					}
-
+					if (p.type == Packet.Type.SHOOT) {
+						server.game.shoot(this);
+					}
 					if (p.type == Packet.Type.EXIT) {
 						server.game.removePlayer(this);
 						if (!server.game.isRunning) {

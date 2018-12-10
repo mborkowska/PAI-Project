@@ -26,6 +26,7 @@ public class Client implements ActionListener {
 	JButton MoveDown = new JButton("Move Down");
 	JButton MoveRight = new JButton("Move Right");
 	JButton MoveLeft = new JButton("Move Left");
+	JButton Shoot = new JButton("Shoot");
 	JButton ExitGame = new JButton("Exit Game");
 	JFrame gameFrame;
 	JTextArea gameTextArea = new JTextArea();
@@ -103,6 +104,7 @@ public class Client implements ActionListener {
 		MoveLeft.addActionListener(this);
 		MoveRight.addActionListener(this);
 		ExitGame.addActionListener(this);
+		Shoot.addActionListener(this);
 		gameTextArea.setEditable(false);
 		JScrollPane gameAreaScrollPane = new JScrollPane(gameTextArea);
 		gameAreaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -112,6 +114,7 @@ public class Client implements ActionListener {
 		gameP.add(MoveUp);
 		gameP.add(MoveLeft);
 		gameP.add(MoveRight);
+		gameP.add(Shoot);
 		gameP.add(ExitGame);
 		gameFrame.add(gameP);
 	}
@@ -157,6 +160,9 @@ public class Client implements ActionListener {
 		if (e.getSource() == MoveRight) {
 			p.type = Packet.Type.MOVE;
 			p.direction = Direction.RIGHT;
+		}
+		if (e.getSource() == Shoot) {
+			p.type = Packet.Type.SHOOT;
 		}
 		if (e.getSource() == ExitGame) {
 			p.type = Packet.Type.EXIT;

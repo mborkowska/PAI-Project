@@ -13,6 +13,7 @@ public class Packet implements Serializable {
 		MESSAGE,
 		GAME_OVER, 
 		MOVE,
+		SHOOT,
 		BOARD_UPDATE;
 	}
 	public Type type;

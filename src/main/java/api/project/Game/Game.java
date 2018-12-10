@@ -3,8 +3,13 @@ package api.project.Game;
 import java.util.ArrayList;
 import java.util.Random;
 
+import javax.swing.JOptionPane;
+
+import com.sun.swing.internal.plaf.synth.resources.synth;
+
 import api.project.Game.Board.fieldType;
 import api.project.ServerClient.Packet;
+import api.project.ServerClient.Server;
 import api.project.ServerClient.ServerConnection;
 import api.project.ServerClient.Packet.Type;
 
@@ -17,10 +22,14 @@ public class Game {
 	private int currentPlayer = -1;
 	boolean monstersShouldExist = true;
 	private int monsterAmount = 5;
+	private int rows = 20;
+	private int cols = 20;
+	private int ammo = 20;
+	private int life = 20;
 
 	public synchronized void addPlayer(ServerConnection sc) {
 		playersConnections.add(sc);
-		players.add(new Player(sc, 20, 20));
+		players.add(new Player(sc, ammo, life));
 		int index = players.size() - 1;
 		addCharacter(players.get(index));
 	}
@@ -41,8 +50,45 @@ public class Game {
 		moveCharacter(players.get(currentPlayer), dir);
 	}
 
+	public synchronized boolean shoot(ServerConnection sc) {
+		setCurrentPlayer(sc);
+		int currentX = players.get(currentPlayer).position.getX();
+		int currentY = players.get(currentPlayer).position.getY();
+		boolean shot = false;
+		if (players.get(currentPlayer).canShoot()) {
+			// look for monsters
+			for (int i = -1; i < 2; i++) {
+				for (int j = -1; j < 2; j++) {
+					if (i + currentX >= 0 && i + currentX <= rows - 1 && j + currentY >= 0 && j + currentY <= cols - 1
+							&& (i + j) % 2 != 0) {
+						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.MONSTER) {
+							board.setAt(currentX + i, currentY + j, Board.fieldType.BLANK);
+							players.get(currentPlayer).shoot();
+							for(int k = 0; k < monsterAmount; k++) {
+								if(monsters.get(k).monster.position.getX() == currentX+i && monsters.get(k).monster.position.getY() == currentY+j) {
+									monsters.get(k).monster.takeDamage();
+									Packet p = new Packet();
+									p.type = Type.BOARD_UPDATE;
+									p.message = board.display();
+									sc.sendPacketToClient(p);
+									sc.sendPacketToOtherClients(p);
+								}
+							}
+							System.out.println("Congrats! You shot a monster");
+							shot = true;
+						}
+					}
+				}
+			}
+			System.out.println();
+		} else {
+			System.out.println("Out of ammo. Reload to shoot.");
+		}
+		return shot;
+	}
+
 	public synchronized void startGame() {
-		board = new Board(20, 20);
+		board = new Board(rows, cols);
 		isRunning = true;
 		for (int i = 0; i < monsterAmount; i++) {
 			monsters.add(new SpawnMonster());
@@ -68,13 +114,12 @@ public class Game {
 
 	public class SpawnMonster extends Thread {
 		private boolean shouldRun = true;
-
+		public Monster monster = new Monster();
 		public void terminate() {
 			shouldRun = false;
 		}
 
 		public void run() {
-			Monster monster = new Monster();
 			addCharacter(monster);
 			Random rand = new Random();
 			int sleep;
@@ -82,7 +127,7 @@ public class Game {
 			Packet p;
 			Direction dir = null;
 			while (shouldRun) {
-				sleep = rand.nextInt((2000 - 1000) + 1) + 1000; // random between 1s and 2s
+				sleep = rand.nextInt((5000 - 4000) + 1) + 4000; // random between 1s and 2s
 				try {
 					Thread.sleep(sleep);
 					if (!monster.alive) {

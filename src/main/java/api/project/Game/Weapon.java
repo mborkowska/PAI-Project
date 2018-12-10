@@ -1,5 +1,7 @@
 package api.project.Game;
 
+import javax.swing.JOptionPane;
+
 public class Weapon {
 	private int ammo;
 	private int maxAmmo;
@@ -18,12 +20,15 @@ public class Weapon {
 	}
 
 	public boolean shoot() {
-		if (ammo > 0) {
+		if (canShoot()) {
 			ammo--;
 			return true;
 		} else {
-			System.out.println("Out of ammo");
+			JOptionPane.showMessageDialog(null, "Out of ammo. Reload to shoot.");
 			return false;
 		}
+	}
+	public boolean canShoot() {
+		return ammo > 0;
 	}
 }

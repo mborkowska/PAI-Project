@@ -5,7 +5,7 @@ import api.project.ServerClient.ServerConnection;
 public class Player extends Character {
 	public ServerConnection connection;
 	public Weapon weapon;
-	public int life = 20;
+	public int life;
 	
 	public Player(ServerConnection sc, int ammo, int life) {
 		connection = sc;
@@ -15,6 +15,9 @@ public class Player extends Character {
 	
 	public boolean shoot() {
 		return weapon.shoot();
+	}
+	public boolean canShoot() {
+		return weapon.canShoot();
 	}
 	
 	public void getDamage() {
