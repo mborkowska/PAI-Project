@@ -1,10 +1,12 @@
 package api.project.Game;
 
+import java.lang.Thread.State;
 import java.util.ArrayList;
 import java.util.Random;
 
 import javax.swing.JOptionPane;
 
+import com.sun.javafx.geom.BaseBounds.BoundsType;
 import com.sun.swing.internal.plaf.synth.resources.synth;
 
 import api.project.Game.Board.fieldType;
@@ -52,39 +54,24 @@ public class Game {
 
 	public synchronized boolean shoot(ServerConnection sc) {
 		setCurrentPlayer(sc);
-		int currentX = players.get(currentPlayer).position.getX();
-		int currentY = players.get(currentPlayer).position.getY();
 		boolean shot = false;
 		if (players.get(currentPlayer).canShoot()) {
-			// look for monsters
-			for (int i = -1; i < 2; i++) {
-				for (int j = -1; j < 2; j++) {
-					if (i + currentX >= 0 && i + currentX <= rows - 1 && j + currentY >= 0 && j + currentY <= cols - 1
-							&& (i + j) % 2 != 0) {
-						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.MONSTER) {
-							board.setAt(currentX + i, currentY + j, Board.fieldType.BLANK);
-							players.get(currentPlayer).shoot();
-							for(int k = 0; k < monsterAmount; k++) {
-								if(monsters.get(k).monster.position.getX() == currentX+i && monsters.get(k).monster.position.getY() == currentY+j) {
-									monsters.get(k).monster.takeDamage();
-									Packet p = new Packet();
-									p.type = Type.BOARD_UPDATE;
-									p.message = board.display();
-									sc.sendPacketToClient(p);
-									sc.sendPacketToOtherClients(p);
-								}
-							}
-							System.out.println("Congrats! You shot a monster");
-							shot = true;
-						}
-					}
-				}
-			}
-			System.out.println();
+			shot = findAndShootCharacters(players.get(currentPlayer));
 		} else {
-			System.out.println("Out of ammo. Reload to shoot.");
+			Packet p = new Packet();
+			p.type = Type.MESSAGE;
+			p.message = "You are out of ammo.\n";
+			sc.sendPacketToClient(p);
 		}
 		return shot;
+	}
+
+	public boolean reload(ServerConnection sc) {
+		setCurrentPlayer(sc);
+		// TODO
+		// some quiz or something
+		players.get(currentPlayer).weapon.reload();
+		return true;
 	}
 
 	public synchronized void startGame() {
@@ -115,6 +102,7 @@ public class Game {
 	public class SpawnMonster extends Thread {
 		private boolean shouldRun = true;
 		public Monster monster = new Monster();
+
 		public void terminate() {
 			shouldRun = false;
 		}
@@ -130,13 +118,14 @@ public class Game {
 				sleep = rand.nextInt((5000 - 4000) + 1) + 4000; // random between 1s and 2s
 				try {
 					Thread.sleep(sleep);
-					if (!monster.alive) {
-						terminate();
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+				} catch (InterruptedException | CustomException e) {
 					terminate();
 				}
+				if (!monster.alive) {
+					terminate();
+					break;
+				}
+				findAndShootCharacters(monster);
 				move = rand.nextInt((4 - 1) + 1) + 1;
 				switch (move) {
 				case 1:
@@ -214,5 +203,62 @@ public class Game {
 			character.position = oldPosition;
 			return false;
 		}
+	}
+
+	private boolean findAndShootCharacters(Character character) {
+		int currentX = character.position.getX();
+		int currentY = character.position.getY();
+		boolean shot = false;
+		Board.fieldType whoToShoot;
+		if (character instanceof Player)
+			whoToShoot = Board.fieldType.MONSTER;
+		else
+			whoToShoot = Board.fieldType.PLAYER;
+
+		for (int i = -1; i < 2; i++) {
+			for (int j = -1; j < 2; j++) {
+				if (i + currentX >= 0 && i + currentX <= rows - 1 && j + currentY >= 0 && j + currentY <= cols - 1
+						&& (i + j) % 2 != 0) {
+					if (board.getAt(currentX + i, currentY + j) == whoToShoot) {
+						if (character instanceof Player) {
+							Player player = (Player) character;
+							board.setAt(currentX + i, currentY + j, Board.fieldType.BLANK);
+							players.get(currentPlayer).shoot();
+							for (int k = 0; k < monsterAmount; k++) {
+								if (monsters.get(k).monster.position.getX() == currentX + i
+										&& monsters.get(k).monster.position.getY() == currentY + j) {
+									monsters.get(k).monster.takeDamage();
+									Packet p = new Packet();
+									p.type = Type.BOARD_UPDATE;
+									p.message = board.display();
+									player.connection.sendPacketToClient(p);
+									player.connection.sendPacketToOtherClients(p);
+								}
+							}
+							shot = true;
+						}
+						if (character instanceof Monster) {
+							for (int k = 0; k < players.size(); k++) {
+								if (players.get(k).position.getX() == currentX + i
+										&& players.get(k).position.getY() == currentY + j) {
+									players.get(k).takeDamage();
+									Packet p = new Packet();
+									p.type = Type.MESSAGE;
+									if(!players.get(k).isAlive()) {
+										//TODO
+										//what happens when a player is killed?
+										p.message = "You are dead.\n"; 
+									} else {
+										p.message = "You were damaged by a monster. Your life: " + players.get(k).life + "\n";
+									}
+									players.get(k).connection.sendPacketToClient(p);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return shot;
 	}
 }

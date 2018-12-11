@@ -10,6 +10,7 @@ public class Character {
 		position.setX(rand.nextInt(((19 - 0) + 1) + 0));
 		position.setY(rand.nextInt(((19 - 0) + 1) + 0));
 	}
+	//TODO change board size!!!!!!
 
 	public void moveUp() {
 		position.changeX(-1);
@@ -26,4 +27,5 @@ public class Character {
 	public void moveLeft() {
 		position.changeY(-1);
 	}
+	
 }

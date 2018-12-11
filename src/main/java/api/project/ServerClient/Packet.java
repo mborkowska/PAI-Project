@@ -14,6 +14,7 @@ public class Packet implements Serializable {
 		GAME_OVER, 
 		MOVE,
 		SHOOT,
+		RELOAD,
 		BOARD_UPDATE;
 	}
 	public Type type;

@@ -20,7 +20,7 @@ public class Player extends Character {
 		return weapon.canShoot();
 	}
 	
-	public void getDamage() {
+	public void takeDamage() {
 		life--;
 	}
 	public boolean isAlive() {

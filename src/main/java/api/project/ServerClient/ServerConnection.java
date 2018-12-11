@@ -94,7 +94,15 @@ public class ServerConnection extends Thread {
 						sendPacketToOtherClients(returnPacket);
 					}
 					if (p.type == Packet.Type.SHOOT) {
-						server.game.shoot(this);
+						if(server.game.shoot(this)) {
+							returnPacket.type = Type.MESSAGE;
+							returnPacket.message = "Congratulations! You have killed a monster.";
+							sendPacketToClient(returnPacket);
+							textArea.append(this.username + " has killed a monster.\n");
+						} 
+					}
+					if (p.type == Packet.Type.RELOAD) {
+						server.game.reload(this);
 					}
 					if (p.type == Packet.Type.EXIT) {
 						server.game.removePlayer(this);

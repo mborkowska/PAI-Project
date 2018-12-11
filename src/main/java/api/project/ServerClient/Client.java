@@ -27,6 +27,7 @@ public class Client implements ActionListener {
 	JButton MoveRight = new JButton("Move Right");
 	JButton MoveLeft = new JButton("Move Left");
 	JButton Shoot = new JButton("Shoot");
+	JButton Reload = new JButton("Reload");
 	JButton ExitGame = new JButton("Exit Game");
 	JFrame gameFrame;
 	JTextArea gameTextArea = new JTextArea();
@@ -65,11 +66,6 @@ public class Client implements ActionListener {
 					e.printStackTrace();
 				}
 				listener.terminate();
-				/*try {
-					listener.join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}*/
 			}
 		});
 		Panel p = new Panel();
@@ -105,6 +101,7 @@ public class Client implements ActionListener {
 		MoveRight.addActionListener(this);
 		ExitGame.addActionListener(this);
 		Shoot.addActionListener(this);
+		Reload.addActionListener(this);
 		gameTextArea.setEditable(false);
 		JScrollPane gameAreaScrollPane = new JScrollPane(gameTextArea);
 		gameAreaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -115,6 +112,7 @@ public class Client implements ActionListener {
 		gameP.add(MoveLeft);
 		gameP.add(MoveRight);
 		gameP.add(Shoot);
+		gameP.add(Reload);
 		gameP.add(ExitGame);
 		gameFrame.add(gameP);
 	}
@@ -163,6 +161,9 @@ public class Client implements ActionListener {
 		}
 		if (e.getSource() == Shoot) {
 			p.type = Packet.Type.SHOOT;
+		}
+		if (e.getSource() == Reload) {
+			p.type = Packet.Type.RELOAD;
 		}
 		if (e.getSource() == ExitGame) {
 			p.type = Packet.Type.EXIT;
