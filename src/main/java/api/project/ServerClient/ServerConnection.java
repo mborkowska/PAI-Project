@@ -27,11 +27,10 @@ public class ServerConnection extends Thread {
 		this.textArea = server.textArea;
 	}
 
-	public void sendPacketToClient(Packet packet) {
+	public synchronized void sendPacketToClient(Packet packet) {
 		try {
 			
 			oout.writeObject(packet);
-			
 			oout.flush();
 			oout.reset();
 		} catch (IOException e) {
@@ -74,7 +73,12 @@ public class ServerConnection extends Thread {
 						shouldRun = false;
 					}
 					if (p.type == Packet.Type.MESSAGE) {
-						textArea.append(this.username + ": " + p.message);
+						textArea.append(p.message);
+						synchronized (server.lobby) {
+							for(int i = 0; i < server.lobby.size(); i++) {
+								server.lobby.get(i).sendPacketToClient(p);
+							}
+						}
 					}
 					if (p.type == Packet.Type.PLAY) {
 						if (!server.game.isRunning) {
@@ -83,7 +87,7 @@ public class ServerConnection extends Thread {
 						}
 						server.game.addPlayer(this);
 						returnPacket.type = Type.PLAY;
-						returnPacket.message = server.displayBoard();
+						returnPacket.message = server.game.displayBoard(this);
 						sendPacketToClient(returnPacket);
 						returnPacket.type = Type.BOARD_UPDATE;
 						sendPacketToOtherClients(returnPacket);
@@ -91,9 +95,13 @@ public class ServerConnection extends Thread {
 					if (p.type == Packet.Type.MOVE) {
 						server.game.movePlayer(this, p.direction);
 						returnPacket.type = Type.BOARD_UPDATE;
-						returnPacket.message = server.displayBoard();
-						sendPacketToClient(returnPacket);
-						sendPacketToOtherClients(returnPacket);
+						synchronized (server.lobby) {
+							for(int i = 0; i < server.lobby.size(); i++) {
+								returnPacket.message = server.game.displayBoard(server.lobby.get(i));
+								server.lobby.get(i).sendPacketToClient(returnPacket);
+							}
+						}
+						
 					}
 					if (p.type == Packet.Type.SHOOT) {
 						if(server.game.shoot(this)) {

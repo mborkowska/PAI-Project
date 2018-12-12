@@ -43,6 +43,13 @@ public class Game {
 			board.setAt(players.get(currentPlayer).position.getX(), players.get(currentPlayer).position.getY(),
 					fieldType.BLANK);
 			players.remove(currentPlayer);
+			synchronized (players) {
+				Packet p = new Packet();
+				for (int i = 0; i < players.size(); i++) {
+					p.message = board.display(players.get(i).position);
+					players.get(i).connection.sendPacketToClient(p);
+				}
+			}
 			if (players.size() == 0)
 				endGame();
 		}
@@ -159,9 +166,9 @@ public class Game {
 				moveCharacter(monster, dir);
 				p = new Packet();
 				p.type = Type.BOARD_UPDATE;
-				p.message = board.display();
 				synchronized (players) {
-					for (int i = 0; i < playersConnections.size(); i++) {
+					for (int i = 0; i < players.size(); i++) {
+						p.message = board.display(players.get(i).position);
 						players.get(i).connection.sendPacketToClient(p);
 					}
 				}
@@ -235,7 +242,6 @@ public class Game {
 						&& (i + j) % 2 != 0) {
 					if (character instanceof Player) {
 						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.MONSTER) {
-							Player player = (Player) character;
 							board.setAt(currentX + i, currentY + j, Board.fieldType.BLANK);
 							players.get(currentPlayer).shoot();
 							for (int k = 0; k < monsterAmount; k++) {
@@ -243,10 +249,13 @@ public class Game {
 										&& monsters.get(k).monster.position.getY() == currentY + j) {
 									monsters.get(k).monster.takeDamage();
 									Packet p = new Packet();
-									p.type = Type.BOARD_UPDATE;
-									p.message = board.display();
-									player.connection.sendPacketToClient(p);
-									player.connection.sendPacketToOtherClients(p);
+									p.type = Type.BOARD_UPDATE;									
+									synchronized (players) {
+										for (int o = 0; o < players.size(); o++) {
+											p.message = board.display(players.get(o).position);
+											players.get(o).connection.sendPacketToClient(p);
+										}
+									}
 								}
 							}
 							shot = true;
@@ -279,7 +288,6 @@ public class Game {
 								if (diamond.position.getX() == currentX + i
 										&& diamond.position.getX() == currentY + j) {
 									diamond.takeDamage();
-									System.out.println(diamond.health);
 									Packet p = new Packet();
 									p.type = Type.DIAMOND_LIFE;
 									p.diamondLife = diamond.health;
@@ -288,7 +296,6 @@ public class Game {
 									}
 								}
 							}
-
 						}
 					}
 				}
@@ -296,5 +303,10 @@ public class Game {
 			}
 		}
 		return shot;
+	}
+	
+	public String displayBoard(ServerConnection sc) {
+		setCurrentPlayer(sc);
+		return board.display(players.get(currentPlayer).position);
 	}
 }

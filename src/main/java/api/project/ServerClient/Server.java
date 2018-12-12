@@ -96,7 +96,7 @@ public class Server {
 		}
 	}
 	
-	public String displayBoard() {
+	/*public String displayBoard() {
 		return game.board.display();
-	}
+	}*/
 }

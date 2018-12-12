@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Panel;
+import java.awt.TextArea;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -25,10 +26,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import api.project.Game.Direction;
+import api.project.ServerClient.Packet.Type;
 
 public class Client implements KeyListener {
-	JFrame frame;
-	JTextArea textArea = new JTextArea();
+
 	JLabel lifeLabel = new JLabel("Life:");
 	JLabel ammoLabel = new JLabel("Ammo:");
 	JLabel diamondLife = new JLabel("Diamond life:");
@@ -37,7 +38,7 @@ public class Client implements KeyListener {
 	JTextField diamond = new JTextField();
 	JFrame gameFrame;
 	JTextArea gameTextArea = new JTextArea();
-
+	chatWindow chat;
 	listenForInput listener;
 	Socket s;
 	ObjectInputStream oin;
@@ -56,78 +57,57 @@ public class Client implements KeyListener {
 	}
 
 	private void setUpWindow() {
-		// main window
-		frame = new JFrame(username);
-		frame.setSize(500, 450);
-		frame.setLocationRelativeTo(null);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent windowEvent) {
-				Packet p = new Packet();
-				p.type = Packet.Type.DISCONNECT;
-				try {
-					oout.writeObject(p);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				listener.terminate();
-			}
-		});
-		Panel p = new Panel();
-		frame.addKeyListener(this);
-		textArea.setEditable(false);
-		textArea.addKeyListener(this);
-
-		JScrollPane areaScrollPane = new JScrollPane(textArea);
-		areaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		areaScrollPane.setPreferredSize(new Dimension(430, 275));
-		p.add(areaScrollPane);
-		frame.add(p);
-		frame.setVisible(true);
-		// game window
+		chat = new chatWindow();
+		chat.setup();
 		life.setEditable(false);
 		ammo.setEditable(false);
 		diamond.setEditable(false);
 		gameFrame = new JFrame(username + "'s game");
 		gameFrame.setSize(400, 500);
-		// gameFrame.addKeyListener(this);
 		gameFrame.setLocationRelativeTo(null);
-		/*
-		 * gameFrame.addWindowListener(new WindowAdapter() {
-		 * 
-		 * @Override public void windowClosing(WindowEvent windowEvent) { Packet p = new
-		 * Packet(); p.type = Packet.Type.EXIT; try { oout.writeObject(p); } catch
-		 * (IOException e) { e.printStackTrace(); } } });
-		 */
-		JPanel gameP = new JPanel(new GridBagLayout());
-		gameP.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+
+		gameFrame.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent windowEvent) {
+				Packet p = new Packet();
+				p.type = Packet.Type.EXIT;
+				try {
+					oout.writeObject(p);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+
+		JPanel gamePanel = new JPanel(new GridBagLayout());
+		gameFrame.setFocusable(true);
+		gameFrame.addKeyListener(this);
+		gamePanel.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
 		GridBagConstraints c = new GridBagConstraints();
 		gameTextArea.setEditable(false);
-		//gameTextArea.setMaximumSize(new Dimension(100,100));
+		// gameTextArea.addKeyListener(this);
 		c.gridx = 0;
 		c.gridy = 0;
-		gameP.add(lifeLabel, c);
+		gamePanel.add(lifeLabel, c);
 		c.gridx = 1;
-		gameP.add(ammoLabel, c);
+		gamePanel.add(ammoLabel, c);
 		c.gridx = 3;
-		gameP.add(diamondLife, c);
+		gamePanel.add(diamondLife, c);
 		c.gridy = 1;
 		c.gridx = 0;
-		gameP.add(life, c);
+		gamePanel.add(life, c);
 		c.gridx = 1;
-		gameP.add(ammo, c);
+		gamePanel.add(ammo, c);
 		c.gridx = 3;
-		gameP.add(diamond, c);
-		c.gridy =3;
+		gamePanel.add(diamond, c);
+		c.gridy = 3;
 		c.gridx = 0;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		//c.ipady = 80; // make this component tall
 		c.weightx = 0.0;
 		c.gridwidth = 4;
 
-		gameP.add(gameTextArea, c);
-		gameFrame.add(gameP);
+		gamePanel.add(gameTextArea, c);
+		gameFrame.add(gamePanel);
 	}
 
 	private void connect() {
@@ -163,7 +143,8 @@ public class Client implements KeyListener {
 				try {
 					Packet p = (Packet) oin.readObject();
 					if (p.type == Packet.Type.MESSAGE) {
-						textArea.append(p.message + "\n");
+						chat.textArea.append(p.message + "\n");
+						chat.textArea.setCaretPosition(chat.textArea.getDocument().getLength());
 					}
 					if (p.type == Packet.Type.PLAY) {
 						gameFrame.setVisible(true);
@@ -184,11 +165,10 @@ public class Client implements KeyListener {
 						String sLife = Integer.toString(p.diamondLife);
 						diamond.setText(sLife);
 					}
-					//gameTextArea.setSize(new Dimension(100,100));
+					// gameTextArea.setSize(new Dimension(100,100));
 				} catch (ClassNotFoundException | IOException e) {
 					e.printStackTrace();
 				}
-
 			}
 			try {
 				System.out.println("Streams closing properly");
@@ -198,6 +178,68 @@ public class Client implements KeyListener {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+
+	private class chatWindow implements ActionListener {
+		JFrame frame;
+		JTextArea textArea = new JTextArea();
+		JTextField textField = new JTextField(25);
+		JButton play = new JButton("Play");
+		JButton send = new JButton("Send");
+
+		public void setup() {
+			// main window
+			frame = new JFrame(username);
+			frame.setSize(500, 450);
+			frame.setLocationRelativeTo(null);
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.addWindowListener(new WindowAdapter() {
+				@Override
+				public void windowClosing(WindowEvent windowEvent) {
+					Packet p = new Packet();
+					p.type = Packet.Type.DISCONNECT;
+					try {
+						oout.writeObject(p);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					listener.terminate();
+				}
+			});
+			Panel p = new Panel();
+			textArea.setEditable(false);
+			JScrollPane areaScrollPane = new JScrollPane(textArea);
+			areaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+			areaScrollPane.setPreferredSize(new Dimension(430, 275));
+			play.addActionListener(this);
+			send.addActionListener(this);
+			p.add(areaScrollPane);
+			p.add(textField);
+			p.add(send);
+			p.add(play);
+			frame.add(p);
+			frame.setVisible(true);
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			Packet p = new Packet();
+			if (e.getSource() == play) {
+				p.type = Packet.Type.PLAY;
+			}
+			if (e.getSource() == send) {
+				p.type = Type.MESSAGE;
+				p.message = username + ": " + textField.getText() + "\n";
+				textField.setText(null);
+			}
+			try {
+				oout.writeObject(p);
+				oout.flush();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
 		}
 	}
 
@@ -234,7 +276,6 @@ public class Client implements KeyListener {
 			gameFrame.setVisible(false);
 		}
 		try {
-			System.out.println(e.getKeyChar());
 			oout.writeObject(p);
 			oout.flush();
 		} catch (IOException e1) {

@@ -28,26 +28,32 @@ public class Board {
 		return fields[x][y];
 	}
 
-	public String display() {
+	public String display(Coords coords) {
 		String result = "";
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j++) {
-				if (fields[i][j] == fieldType.PLAYER) {
-					result += " | P";
-				}
-				if (fields[i][j] == fieldType.MONSTER) {
-					result += " | M";
-				}
-				if (fields[i][j] == fieldType.BLANK) {
-					result += " |   ";
-				}
-				if (fields[i][j] == fieldType.DIAMOND) {
-					result += " | X";
+				if (i == coords.getX() && j == coords.getY()) {
+					result += " | Y";
+				} else {
+					if (fields[i][j] == fieldType.PLAYER) {
+						result += " | P";
+					}
+					if (fields[i][j] == fieldType.MONSTER) {
+						result += " | M";
+					}
+					if (fields[i][j] == fieldType.BLANK) {
+						result += " |   ";
+					}
+					if (fields[i][j] == fieldType.DIAMOND) {
+						result += " | X";
+					}
 				}
 
 			}
-			if(i < rows-1) result += " |\n";
+			if (i < rows - 1)
+				result += " |\n";
 		}
+
 		return result;
 	}
 }
