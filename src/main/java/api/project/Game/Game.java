@@ -160,9 +160,12 @@ public class Game {
 				p = new Packet();
 				p.type = Type.BOARD_UPDATE;
 				p.message = board.display();
-				for (int i = 0; i < playersConnections.size(); i++) {
-					players.get(i).connection.sendPacketToClient(p);
+				synchronized (players) {
+					for (int i = 0; i < playersConnections.size(); i++) {
+						players.get(i).connection.sendPacketToClient(p);
+					}
 				}
+
 			}
 		}
 	}
@@ -221,7 +224,7 @@ public class Game {
 		}
 	}
 
-	private boolean findAndShootCharacters(Character character) {
+	private synchronized boolean findAndShootCharacters(Character character) {
 		int currentX = character.position.getX();
 		int currentY = character.position.getY();
 		boolean shot = false;
@@ -252,36 +255,40 @@ public class Game {
 					if (character instanceof Monster) {
 						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.PLAYER
 								|| board.getAt(currentX + i, currentY + j) == Board.fieldType.DIAMOND) {
-							for (int k = 0; k < players.size(); k++) {
-								if (players.get(k).position.getX() == currentX + i
-										&& players.get(k).position.getY() == currentY + j) {
-									players.get(k).takeDamage();
-									Packet p = new Packet();
-									p.type = Type.LIFE;
-									p.life = players.get(k).life;
-									players.get(k).connection.sendPacketToClient(p);
-									p.type = Type.MESSAGE;
-									if (!players.get(k).isAlive()) {
-										// TODO
-										// what happens when a player is killed?
-										p.message = "You are dead.\n";
-									} else {
-										p.message = "You were damaged by a monster. Your life: " + players.get(k).life
-												+ "\n";
-									}
-									players.get(k).connection.sendPacketToClient(p);
-								}
-							}
-							if (diamond.position.getX() == currentX + i && diamond.position.getX() == currentY + j) {
-								diamond.takeDamage();
-								System.out.println(diamond.health);
-								Packet p = new Packet();
-								p.type = Type.DIAMOND_LIFE;
-								p.diamondLife = diamond.health;
+							synchronized (players) {
 								for (int k = 0; k < players.size(); k++) {
-									players.get(k).connection.sendPacketToClient(p);
+									if (players.get(k).position.getX() == currentX + i
+											&& players.get(k).position.getY() == currentY + j) {
+										players.get(k).takeDamage();
+										Packet p = new Packet();
+										p.type = Type.LIFE;
+										p.life = players.get(k).life;
+										players.get(k).connection.sendPacketToClient(p);
+										p.type = Type.MESSAGE;
+										if (!players.get(k).isAlive()) {
+											// TODO
+											// what happens when a player is killed?
+											p.message = "You are dead.\n";
+										} else {
+											p.message = "You were damaged by a monster. Your life: "
+													+ players.get(k).life + "\n";
+										}
+										players.get(k).connection.sendPacketToClient(p);
+									}
+								}
+								if (diamond.position.getX() == currentX + i
+										&& diamond.position.getX() == currentY + j) {
+									diamond.takeDamage();
+									System.out.println(diamond.health);
+									Packet p = new Packet();
+									p.type = Type.DIAMOND_LIFE;
+									p.diamondLife = diamond.health;
+									for (int k = 0; k < players.size(); k++) {
+										players.get(k).connection.sendPacketToClient(p);
+									}
 								}
 							}
+
 						}
 					}
 				}

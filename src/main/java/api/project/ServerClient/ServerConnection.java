@@ -29,9 +29,11 @@ public class ServerConnection extends Thread {
 
 	public void sendPacketToClient(Packet packet) {
 		try {
-			oout.reset();
+			
 			oout.writeObject(packet);
+			
 			oout.flush();
+			oout.reset();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
