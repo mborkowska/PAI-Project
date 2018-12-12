@@ -1,6 +1,5 @@
 package api.project.ServerClient;
 
-import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -8,6 +7,8 @@ import java.awt.GridBagLayout;
 import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -25,21 +26,15 @@ import javax.swing.JTextField;
 
 import api.project.Game.Direction;
 
-public class Client implements ActionListener {
+public class Client implements KeyListener {
 	JFrame frame;
 	JTextArea textArea = new JTextArea();
-	JTextField life = new JTextField();
-	JTextField ammo = new JTextField();
 	JLabel lifeLabel = new JLabel("Life:");
 	JLabel ammoLabel = new JLabel("Ammo:");
-	JButton PlayButton = new JButton("Play");
-	JButton MoveUp = new JButton("Move Up");
-	JButton MoveDown = new JButton("Move Down");
-	JButton MoveRight = new JButton("Move Right");
-	JButton MoveLeft = new JButton("Move Left");
-	JButton Shoot = new JButton("Shoot");
-	JButton Reload = new JButton("Reload");
-	JButton ExitGame = new JButton("Exit Game");
+	JLabel diamondLife = new JLabel("Diamond life:");
+	JTextField life = new JTextField();
+	JTextField ammo = new JTextField();
+	JTextField diamond = new JTextField();
 	JFrame gameFrame;
 	JTextArea gameTextArea = new JTextArea();
 
@@ -80,20 +75,23 @@ public class Client implements ActionListener {
 			}
 		});
 		Panel p = new Panel();
-		PlayButton.addActionListener(this);
+		frame.addKeyListener(this);
 		textArea.setEditable(false);
-		life.setEditable(false);
-		ammo.setEditable(false);
+		textArea.addKeyListener(this);
+
 		JScrollPane areaScrollPane = new JScrollPane(textArea);
 		areaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		areaScrollPane.setPreferredSize(new Dimension(430, 275));
 		p.add(areaScrollPane);
-		p.add(PlayButton);
 		frame.add(p);
 		frame.setVisible(true);
 		// game window
+		life.setEditable(false);
+		ammo.setEditable(false);
+		diamond.setEditable(false);
 		gameFrame = new JFrame(username + "'s game");
-		gameFrame.setSize(700, 700);
+		gameFrame.setSize(400, 500);
+		// gameFrame.addKeyListener(this);
 		gameFrame.setLocationRelativeTo(null);
 		/*
 		 * gameFrame.addWindowListener(new WindowAdapter() {
@@ -105,55 +103,30 @@ public class Client implements ActionListener {
 		JPanel gameP = new JPanel(new GridBagLayout());
 		gameP.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
 		GridBagConstraints c = new GridBagConstraints();
-		MoveDown.addActionListener(this);
-		MoveUp.addActionListener(this);
-		MoveLeft.addActionListener(this);
-		MoveRight.addActionListener(this);
-		ExitGame.addActionListener(this);
-		Shoot.addActionListener(this);
-		Reload.addActionListener(this);
 		gameTextArea.setEditable(false);
-		gameTextArea.setSize(200, 200);
+		//gameTextArea.setMaximumSize(new Dimension(100,100));
 		c.gridx = 0;
 		c.gridy = 0;
 		gameP.add(lifeLabel, c);
 		c.gridx = 1;
 		gameP.add(ammoLabel, c);
+		c.gridx = 3;
+		gameP.add(diamondLife, c);
 		c.gridy = 1;
 		c.gridx = 0;
 		gameP.add(life, c);
 		c.gridx = 1;
 		gameP.add(ammo, c);
-		c.gridx = 1;
-		c.gridy = 2;
-		gameP.add(MoveUp, c);
 		c.gridx = 3;
-		gameP.add(Shoot, c);
-		c.gridy = 3;
-		c.gridx = 0;
-		gameP.add(MoveLeft, c);
-		c.gridx = 2;
-		gameP.add(MoveRight, c);
-		c.gridx = 3;
-		gameP.add(Reload, c);
-		c.gridy = 4;
-		c.gridx = 1;
-		gameP.add(MoveDown, c);
-		c.gridx = 3;
-		gameP.add(ExitGame, c);
-
-		c.gridy = 5;
+		gameP.add(diamond, c);
+		c.gridy =3;
 		c.gridx = 0;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		c.ipady = 200;      //make this component tall
+		//c.ipady = 80; // make this component tall
 		c.weightx = 0.0;
 		c.gridwidth = 4;
-		//gameP.add(new JButton("New"), c);
-		gameP.add(gameTextArea);
-		
-		
-		//c.weighty = 10;
-		
+
+		gameP.add(gameTextArea, c);
 		gameFrame.add(gameP);
 	}
 
@@ -178,47 +151,6 @@ public class Client implements ActionListener {
 		listener.start();
 	}
 
-	public void actionPerformed(ActionEvent e) {
-		Packet p = new Packet();
-		if (e.getSource() == PlayButton) {
-			p.type = Packet.Type.PLAY;
-		}
-		if (e.getSource() == MoveDown) {
-			p.type = Packet.Type.MOVE;
-			p.direction = Direction.DOWN;
-		}
-		if (e.getSource() == MoveUp) {
-			p.type = Packet.Type.MOVE;
-			p.direction = Direction.UP;
-		}
-		if (e.getSource() == MoveLeft) {
-			p.type = Packet.Type.MOVE;
-			p.direction = Direction.LEFT;
-		}
-		if (e.getSource() == MoveRight) {
-			p.type = Packet.Type.MOVE;
-			p.direction = Direction.RIGHT;
-		}
-		if (e.getSource() == Shoot) {
-			p.type = Packet.Type.SHOOT;
-		}
-		if (e.getSource() == Reload) {
-			p.type = Packet.Type.RELOAD;
-		}
-		if (e.getSource() == ExitGame) {
-			p.type = Packet.Type.EXIT;
-			gameFrame.setVisible(false);
-		}
-
-		try {
-			oout.writeObject(p);
-			oout.flush();
-			System.out.println();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-	}
-
 	public class listenForInput extends Thread {
 		private boolean shouldRun = true;
 
@@ -235,12 +167,10 @@ public class Client implements ActionListener {
 					}
 					if (p.type == Packet.Type.PLAY) {
 						gameFrame.setVisible(true);
-						gameTextArea.setText(null);
-						gameTextArea.append(p.message + "\n");
+						gameTextArea.setText(p.message);
 					}
 					if (p.type == Packet.Type.BOARD_UPDATE) {
-						gameTextArea.setText(null);
-						gameTextArea.append(p.message + "\n");
+						gameTextArea.setText(p.message);
 					}
 					if (p.type == Packet.Type.AMMO) {
 						String sAmmo = Integer.toString(p.ammo);
@@ -250,10 +180,15 @@ public class Client implements ActionListener {
 						String sLife = Integer.toString(p.life);
 						life.setText(sLife);
 					}
-
+					if (p.type == Packet.Type.DIAMOND_LIFE) {
+						String sLife = Integer.toString(p.diamondLife);
+						diamond.setText(sLife);
+					}
+					//gameTextArea.setSize(new Dimension(100,100));
 				} catch (ClassNotFoundException | IOException e) {
 					e.printStackTrace();
 				}
+
 			}
 			try {
 				System.out.println("Streams closing properly");
@@ -264,5 +199,76 @@ public class Client implements ActionListener {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		Packet p = new Packet();
+		if (e.getKeyCode() == KeyEvent.VK_ALT) {
+			p.type = Packet.Type.PLAY;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+			p.type = Packet.Type.MOVE;
+			p.direction = Direction.DOWN;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_UP) {
+			p.type = Packet.Type.MOVE;
+			p.direction = Direction.UP;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+			p.type = Packet.Type.MOVE;
+			p.direction = Direction.RIGHT;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+			p.type = Packet.Type.MOVE;
+			p.direction = Direction.LEFT;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_S) {
+			p.type = Packet.Type.SHOOT;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_R) {
+			p.type = Packet.Type.RELOAD;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_E) {
+			p.type = Packet.Type.EXIT;
+			gameFrame.setVisible(false);
+		}
+		try {
+			System.out.println(e.getKeyChar());
+			oout.writeObject(p);
+			oout.flush();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	@Override
+	public void keyReleased(KeyEvent arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+//		Packet p = new Packet();
+//		if (e.getKeyCode() == KeyEvent.VK_P) {
+//			p.type = Packet.Type.PLAY;
+//		}
+//		if (e.getKeyCode() == KeyEvent.VK_S) {
+//			p.type = Packet.Type.SHOOT;
+//		}
+//		if (e.getKeyCode() == KeyEvent.VK_R) {
+//			p.type = Packet.Type.RELOAD;
+//		}
+//		if (e.getKeyCode() == KeyEvent.VK_E) {
+//			p.type = Packet.Type.EXIT;
+//		}
+//		try {
+//			System.out.println(e.getKeyChar());
+//			oout.writeObject(p);
+//			oout.flush();
+//		} catch (IOException e1) {
+//			e1.printStackTrace();
+//		}
 	}
 }

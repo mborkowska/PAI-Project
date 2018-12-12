@@ -9,7 +9,7 @@ public class Player extends Character {
 	public Weapon weapon;
 	public int life;
 	
-	public Player(ServerConnection sc, int ammo, int life) {
+	public Player(ServerConnection sc, int ammo, int life, int diamondLife) {
 		connection = sc;
 		weapon = new Weapon(ammo);
 		this.life = life;
@@ -19,6 +19,9 @@ public class Player extends Character {
 		sc.sendPacketToClient(p);
 		p.type = Type.LIFE;
 		p.life = this.life;
+		sc.sendPacketToClient(p);
+		p.type = Type.DIAMOND_LIFE;
+		p.diamondLife = diamondLife;
 		sc.sendPacketToClient(p);
 	}
 	

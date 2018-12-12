@@ -19,11 +19,12 @@ public class Game {
 	private ArrayList<ServerConnection> playersConnections = new ArrayList<>();
 	private ArrayList<Player> players = new ArrayList<>();
 	private ArrayList<SpawnMonster> monsters = new ArrayList<>();
+	private Diamond diamond = new Diamond();
 	public boolean isRunning = false;
 	public Board board;
 	private int currentPlayer = -1;
 	boolean monstersShouldExist = true;
-	private int monsterAmount = 5;
+	private int monsterAmount = 10;
 	private int rows = 20;
 	private int cols = 20;
 	private int ammo = 20;
@@ -31,7 +32,7 @@ public class Game {
 
 	public synchronized void addPlayer(ServerConnection sc) {
 		playersConnections.add(sc);
-		players.add(new Player(sc, ammo, life));
+		players.add(new Player(sc, ammo, life, diamond.health));
 		int index = players.size() - 1;
 		addCharacter(players.get(index));
 	}
@@ -87,6 +88,7 @@ public class Game {
 
 	public synchronized void startGame() {
 		board = new Board(rows, cols);
+		addCharacter(diamond);
 		isRunning = true;
 		for (int i = 0; i < monsterAmount; i++) {
 			monsters.add(new SpawnMonster());
@@ -126,7 +128,7 @@ public class Game {
 			Packet p;
 			Direction dir = null;
 			while (shouldRun) {
-				sleep = rand.nextInt((5000 - 4000) + 1) + 4000; // random between 1s and 2s
+				sleep = rand.nextInt((2000 - 1000) + 1) + 1000; // random between 1s and 2s
 				try {
 					Thread.sleep(sleep);
 				} catch (InterruptedException | CustomException e) {
@@ -137,7 +139,7 @@ public class Game {
 					break;
 				}
 				findAndShootCharacters(monster);
-				move = rand.nextInt((4 - 1) + 1) + 1;
+				move = monster.goTo();
 				switch (move) {
 				case 1:
 					dir = Direction.DOWN;
@@ -174,6 +176,9 @@ public class Game {
 		}
 		if (character instanceof Player) {
 			board.setAt(character.position.getX(), character.position.getY(), Board.fieldType.PLAYER);
+		}
+		if (character instanceof Diamond) {
+			board.setAt(character.position.getX(), character.position.getY(), Board.fieldType.DIAMOND);
 		}
 	}
 
@@ -220,18 +225,13 @@ public class Game {
 		int currentX = character.position.getX();
 		int currentY = character.position.getY();
 		boolean shot = false;
-		Board.fieldType whoToShoot;
-		if (character instanceof Player)
-			whoToShoot = Board.fieldType.MONSTER;
-		else
-			whoToShoot = Board.fieldType.PLAYER;
 
 		for (int i = -1; i < 2; i++) {
 			for (int j = -1; j < 2; j++) {
 				if (i + currentX >= 0 && i + currentX <= rows - 1 && j + currentY >= 0 && j + currentY <= cols - 1
 						&& (i + j) % 2 != 0) {
-					if (board.getAt(currentX + i, currentY + j) == whoToShoot) {
-						if (character instanceof Player) {
+					if (character instanceof Player) {
+						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.MONSTER) {
 							Player player = (Player) character;
 							board.setAt(currentX + i, currentY + j, Board.fieldType.BLANK);
 							players.get(currentPlayer).shoot();
@@ -248,7 +248,10 @@ public class Game {
 							}
 							shot = true;
 						}
-						if (character instanceof Monster) {
+					}
+					if (character instanceof Monster) {
+						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.PLAYER
+								|| board.getAt(currentX + i, currentY + j) == Board.fieldType.DIAMOND) {
 							for (int k = 0; k < players.size(); k++) {
 								if (players.get(k).position.getX() == currentX + i
 										&& players.get(k).position.getY() == currentY + j) {
@@ -269,9 +272,20 @@ public class Game {
 									players.get(k).connection.sendPacketToClient(p);
 								}
 							}
+							if (diamond.position.getX() == currentX + i && diamond.position.getX() == currentY + j) {
+								diamond.takeDamage();
+								System.out.println(diamond.health);
+								Packet p = new Packet();
+								p.type = Type.DIAMOND_LIFE;
+								p.diamondLife = diamond.health;
+								for (int k = 0; k < players.size(); k++) {
+									players.get(k).connection.sendPacketToClient(p);
+								}
+							}
 						}
 					}
 				}
+
 			}
 		}
 		return shot;

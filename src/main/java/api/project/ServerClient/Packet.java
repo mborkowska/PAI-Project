@@ -17,7 +17,8 @@ public class Packet implements Serializable {
 		RELOAD,
 		BOARD_UPDATE,
 		LIFE,
-		AMMO
+		AMMO,
+		DIAMOND_LIFE
 	}
 	public Type type;
 	public String message;
@@ -25,4 +26,5 @@ public class Packet implements Serializable {
 	public Direction direction;
 	public int life;
 	public int ammo;
+	public int diamondLife;
 }

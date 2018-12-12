@@ -2,7 +2,7 @@ package api.project.Game;
 
 public class Board {
 	public enum fieldType {
-		BLANK, PLAYER, MONSTER, DIMOND
+		BLANK, PLAYER, MONSTER, DIAMOND
 	}
 
 	private fieldType[][] fields;
@@ -18,7 +18,6 @@ public class Board {
 				fields[i][j] = fieldType.BLANK;
 			}
 		}
-		fields[rows/2][cols/2] = fieldType.DIMOND;
 	}
 
 	public void setAt(int x, int y, fieldType type) {
@@ -42,12 +41,12 @@ public class Board {
 				if (fields[i][j] == fieldType.BLANK) {
 					result += " |   ";
 				}
-				if (fields[i][j] == fieldType.DIMOND) {
+				if (fields[i][j] == fieldType.DIAMOND) {
 					result += " | X";
 				}
 
 			}
-			result += " |\n";
+			if(i < rows-1) result += " |\n";
 		}
 		return result;
 	}
