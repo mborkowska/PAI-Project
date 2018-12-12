@@ -15,10 +15,14 @@ public class Packet implements Serializable {
 		MOVE,
 		SHOOT,
 		RELOAD,
-		BOARD_UPDATE;
+		BOARD_UPDATE,
+		LIFE,
+		AMMO
 	}
 	public Type type;
 	public String message;
 	public String username;
 	public Direction direction;
+	public int life;
+	public int ammo;
 }

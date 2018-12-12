@@ -1,6 +1,10 @@
 package api.project.ServerClient;
 
+import java.awt.BorderLayout;
+import java.awt.ComponentOrientation;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Panel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,15 +16,22 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 import api.project.Game.Direction;
 
 public class Client implements ActionListener {
 	JFrame frame;
 	JTextArea textArea = new JTextArea();
+	JTextField life = new JTextField();
+	JTextField ammo = new JTextField();
+	JLabel lifeLabel = new JLabel("Life:");
+	JLabel ammoLabel = new JLabel("Ammo:");
 	JButton PlayButton = new JButton("Play");
 	JButton MoveUp = new JButton("Move Up");
 	JButton MoveDown = new JButton("Move Down");
@@ -71,6 +82,8 @@ public class Client implements ActionListener {
 		Panel p = new Panel();
 		PlayButton.addActionListener(this);
 		textArea.setEditable(false);
+		life.setEditable(false);
+		ammo.setEditable(false);
 		JScrollPane areaScrollPane = new JScrollPane(textArea);
 		areaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		areaScrollPane.setPreferredSize(new Dimension(430, 275));
@@ -80,21 +93,18 @@ public class Client implements ActionListener {
 		frame.setVisible(true);
 		// game window
 		gameFrame = new JFrame(username + "'s game");
-		gameFrame.setSize(500, 500);
+		gameFrame.setSize(700, 700);
 		gameFrame.setLocationRelativeTo(null);
-		/*gameFrame.addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent windowEvent) {
-				Packet p = new Packet();
-				p.type = Packet.Type.EXIT;
-				try {
-					oout.writeObject(p);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});*/
-		Panel gameP = new Panel();
+		/*
+		 * gameFrame.addWindowListener(new WindowAdapter() {
+		 * 
+		 * @Override public void windowClosing(WindowEvent windowEvent) { Packet p = new
+		 * Packet(); p.type = Packet.Type.EXIT; try { oout.writeObject(p); } catch
+		 * (IOException e) { e.printStackTrace(); } } });
+		 */
+		JPanel gameP = new JPanel(new GridBagLayout());
+		gameP.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+		GridBagConstraints c = new GridBagConstraints();
 		MoveDown.addActionListener(this);
 		MoveUp.addActionListener(this);
 		MoveLeft.addActionListener(this);
@@ -103,17 +113,47 @@ public class Client implements ActionListener {
 		Shoot.addActionListener(this);
 		Reload.addActionListener(this);
 		gameTextArea.setEditable(false);
-		JScrollPane gameAreaScrollPane = new JScrollPane(gameTextArea);
-		gameAreaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		gameAreaScrollPane.setPreferredSize(new Dimension(480, 380));
-		gameP.add(gameAreaScrollPane);
-		gameP.add(MoveDown);
-		gameP.add(MoveUp);
-		gameP.add(MoveLeft);
-		gameP.add(MoveRight);
-		gameP.add(Shoot);
-		gameP.add(Reload);
-		gameP.add(ExitGame);
+		gameTextArea.setSize(200, 200);
+		c.gridx = 0;
+		c.gridy = 0;
+		gameP.add(lifeLabel, c);
+		c.gridx = 1;
+		gameP.add(ammoLabel, c);
+		c.gridy = 1;
+		c.gridx = 0;
+		gameP.add(life, c);
+		c.gridx = 1;
+		gameP.add(ammo, c);
+		c.gridx = 1;
+		c.gridy = 2;
+		gameP.add(MoveUp, c);
+		c.gridx = 3;
+		gameP.add(Shoot, c);
+		c.gridy = 3;
+		c.gridx = 0;
+		gameP.add(MoveLeft, c);
+		c.gridx = 2;
+		gameP.add(MoveRight, c);
+		c.gridx = 3;
+		gameP.add(Reload, c);
+		c.gridy = 4;
+		c.gridx = 1;
+		gameP.add(MoveDown, c);
+		c.gridx = 3;
+		gameP.add(ExitGame, c);
+
+		c.gridy = 5;
+		c.gridx = 0;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.ipady = 200;      //make this component tall
+		c.weightx = 0.0;
+		c.gridwidth = 4;
+		//gameP.add(new JButton("New"), c);
+		gameP.add(gameTextArea);
+		
+		
+		//c.weighty = 10;
+		
 		gameFrame.add(gameP);
 	}
 
@@ -201,6 +241,14 @@ public class Client implements ActionListener {
 					if (p.type == Packet.Type.BOARD_UPDATE) {
 						gameTextArea.setText(null);
 						gameTextArea.append(p.message + "\n");
+					}
+					if (p.type == Packet.Type.AMMO) {
+						String sAmmo = Integer.toString(p.ammo);
+						ammo.setText(sAmmo);
+					}
+					if (p.type == Packet.Type.LIFE) {
+						String sLife = Integer.toString(p.life);
+						life.setText(sLife);
 					}
 
 				} catch (ClassNotFoundException | IOException e) {

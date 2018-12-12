@@ -1,5 +1,7 @@
 package api.project.Game;
 
+import api.project.ServerClient.Packet;
+import api.project.ServerClient.Packet.Type;
 import api.project.ServerClient.ServerConnection;
 
 public class Player extends Character {
@@ -10,7 +12,14 @@ public class Player extends Character {
 	public Player(ServerConnection sc, int ammo, int life) {
 		connection = sc;
 		weapon = new Weapon(ammo);
-		this.life = life; 
+		this.life = life;
+		Packet p = new Packet();
+		p.type = Type.AMMO;
+		p.ammo = weapon.getAmmo();
+		sc.sendPacketToClient(p);
+		p.type = Type.LIFE;
+		p.life = this.life;
+		sc.sendPacketToClient(p);
 	}
 	
 	public boolean shoot() {

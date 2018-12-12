@@ -57,6 +57,13 @@ public class Game {
 		boolean shot = false;
 		if (players.get(currentPlayer).canShoot()) {
 			shot = findAndShootCharacters(players.get(currentPlayer));
+			if (shot) {
+				Packet p = new Packet();
+				p.type = Type.AMMO;
+				p.ammo = players.get(currentPlayer).weapon.getAmmo();
+				players.get(currentPlayer).connection.sendPacketToClient(p);
+			}
+
 		} else {
 			Packet p = new Packet();
 			p.type = Type.MESSAGE;
@@ -71,6 +78,10 @@ public class Game {
 		// TODO
 		// some quiz or something
 		players.get(currentPlayer).weapon.reload();
+		Packet p = new Packet();
+		p.type = Type.AMMO;
+		p.ammo = players.get(currentPlayer).weapon.getAmmo();
+		players.get(currentPlayer).connection.sendPacketToClient(p);
 		return true;
 	}
 
@@ -243,13 +254,17 @@ public class Game {
 										&& players.get(k).position.getY() == currentY + j) {
 									players.get(k).takeDamage();
 									Packet p = new Packet();
+									p.type = Type.LIFE;
+									p.life = players.get(k).life;
+									players.get(k).connection.sendPacketToClient(p);
 									p.type = Type.MESSAGE;
-									if(!players.get(k).isAlive()) {
-										//TODO
-										//what happens when a player is killed?
-										p.message = "You are dead.\n"; 
+									if (!players.get(k).isAlive()) {
+										// TODO
+										// what happens when a player is killed?
+										p.message = "You are dead.\n";
 									} else {
-										p.message = "You were damaged by a monster. Your life: " + players.get(k).life + "\n";
+										p.message = "You were damaged by a monster. Your life: " + players.get(k).life
+												+ "\n";
 									}
 									players.get(k).connection.sendPacketToClient(p);
 								}
