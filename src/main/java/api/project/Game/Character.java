@@ -5,10 +5,10 @@ import java.util.Random;
 public class Character {
 	public Coords position = new Coords();
 
-	public void setRandomPosition() {
+	public void setRandomPosition(int maxX, int maxY) {
 		Random rand = new Random();
-		position.setX(rand.nextInt(((19 - 0) + 1) + 0));
-		position.setY(rand.nextInt(((19 - 0) + 1) + 0));
+		position.setX(rand.nextInt(((maxX - 0) + 1) + 0));
+		position.setY(rand.nextInt(((maxY - 0) + 1) + 0));
 	}
 	//TODO change board size!!!!!!
 

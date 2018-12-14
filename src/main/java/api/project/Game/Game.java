@@ -1,17 +1,11 @@
 package api.project.Game;
 
-import java.lang.Thread.State;
 import java.util.ArrayList;
 import java.util.Random;
-
-import javax.swing.JOptionPane;
-
-import com.sun.javafx.geom.BaseBounds.BoundsType;
-import com.sun.swing.internal.plaf.synth.resources.synth;
-
+import org.w3c.dom.Document;
 import api.project.Game.Board.fieldType;
+import api.project.Game.Player.isAlive;
 import api.project.ServerClient.Packet;
-import api.project.ServerClient.Server;
 import api.project.ServerClient.ServerConnection;
 import api.project.ServerClient.Packet.Type;
 
@@ -19,20 +13,29 @@ public class Game {
 	private ArrayList<ServerConnection> playersConnections = new ArrayList<>();
 	private ArrayList<Player> players = new ArrayList<>();
 	private ArrayList<SpawnMonster> monsters = new ArrayList<>();
-	private Diamond diamond = new Diamond();
+	private Diamond diamond;
 	public boolean isRunning = false;
 	public Board board;
 	private int currentPlayer = -1;
 	boolean monstersShouldExist = true;
-	private int monsterAmount = 10;
-	private int rows = 20;
-	private int cols = 20;
-	private int ammo = 20;
-	private int life = 20;
+	private int monsterAmount;
+	private int rows;
+	private int cols;
+	private int ammo;
+	private int life;
+
+	public Game(Document document) {
+		this.monsterAmount = Integer.parseInt(document.getElementsByTagName("monsterAmount").item(0).getTextContent());
+		this.rows = Integer.parseInt(document.getElementsByTagName("boardRowsNumber").item(0).getTextContent());
+		this.cols = Integer.parseInt(document.getElementsByTagName("boardColsNumber").item(0).getTextContent());
+		this.ammo = Integer.parseInt(document.getElementsByTagName("playerAmmo").item(0).getTextContent());
+		this.life = Integer.parseInt(document.getElementsByTagName("playerLife").item(0).getTextContent());
+		diamond = new Diamond(Integer.parseInt(document.getElementsByTagName("diamondLife").item(0).getTextContent()));
+	}
 
 	public synchronized void addPlayer(ServerConnection sc) {
 		playersConnections.add(sc);
-		players.add(new Player(sc, ammo, life, diamond.health));
+		players.add(new Player(sc, ammo, life, diamond.life));
 		int index = players.size() - 1;
 		addCharacter(players.get(index));
 	}
@@ -70,6 +73,7 @@ public class Game {
 				p.type = Type.AMMO;
 				p.ammo = players.get(currentPlayer).weapon.getAmmo();
 				players.get(currentPlayer).connection.sendPacketToClient(p);
+				
 			}
 
 		} else {
@@ -104,12 +108,25 @@ public class Game {
 	}
 
 	private synchronized void endGame() {
-		System.out.println("Game is ending");
 		isRunning = false;
 		for (int i = 0; i < monsters.size(); i++) {
 			monsters.get(i).terminate();
 		}
 		monsters.clear();
+		Packet p = new Packet();
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				board.setAt(i, j, fieldType.GAME_OVER);
+			}
+		}
+		p.type = Type.BOARD_UPDATE;
+		for (int i = 0; i < players.size(); i++) {
+			players.get(i).connection.sendPacketToClient(p);
+		}
+		p.type = Type.GAME_OVER;
+		for (int i = 0; i < players.size(); i++) {
+			players.get(i).connection.sendPacketToClient(p);
+		}
 	}
 
 	private void setCurrentPlayer(ServerConnection sc) {
@@ -179,7 +196,7 @@ public class Game {
 
 	private synchronized void addCharacter(Character character) {
 		do {
-			character.setRandomPosition();
+			character.setRandomPosition(cols - 1, rows - 1);
 		} while (board.getAt(character.position.getX(), character.position.getY()) != Board.fieldType.BLANK);
 		if (character instanceof Monster) {
 			board.setAt(character.position.getX(), character.position.getY(), Board.fieldType.MONSTER);
@@ -238,7 +255,7 @@ public class Game {
 
 		for (int i = -1; i < 2; i++) {
 			for (int j = -1; j < 2; j++) {
-				if (i + currentX >= 0 && i + currentX <= rows - 1 && j + currentY >= 0 && j + currentY <= cols - 1
+				if (i + currentX >= 0 && i + currentX <= cols - 1 && j + currentY >= 0 && j + currentY <= rows - 1
 						&& (i + j) % 2 != 0) {
 					if (character instanceof Player) {
 						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.MONSTER) {
@@ -247,9 +264,9 @@ public class Game {
 							for (int k = 0; k < monsterAmount; k++) {
 								if (monsters.get(k).monster.position.getX() == currentX + i
 										&& monsters.get(k).monster.position.getY() == currentY + j) {
-									monsters.get(k).monster.takeDamage();
+									monsters.get(k).monster.takeDamage();			
 									Packet p = new Packet();
-									p.type = Type.BOARD_UPDATE;									
+									p.type = Type.BOARD_UPDATE;
 									synchronized (players) {
 										for (int o = 0; o < players.size(); o++) {
 											p.message = board.display(players.get(o).position);
@@ -262,6 +279,7 @@ public class Game {
 						}
 					}
 					if (character instanceof Monster) {
+						Packet p = new Packet();
 						if (board.getAt(currentX + i, currentY + j) == Board.fieldType.PLAYER
 								|| board.getAt(currentX + i, currentY + j) == Board.fieldType.DIAMOND) {
 							synchronized (players) {
@@ -269,42 +287,47 @@ public class Game {
 									if (players.get(k).position.getX() == currentX + i
 											&& players.get(k).position.getY() == currentY + j) {
 										players.get(k).takeDamage();
-										Packet p = new Packet();
 										p.type = Type.LIFE;
 										p.life = players.get(k).life;
-										players.get(k).connection.sendPacketToClient(p);
-										p.type = Type.MESSAGE;
-										if (!players.get(k).isAlive()) {
-											// TODO
-											// what happens when a player is killed?
-											p.message = "You are dead.\n";
-										} else {
-											p.message = "You were damaged by a monster. Your life: "
-													+ players.get(k).life + "\n";
+										if (players.get(k).life == -1) {
+											p.life = 0;
 										}
 										players.get(k).connection.sendPacketToClient(p);
+										p.type = Type.MESSAGE;
+										if (players.get(k).status == isAlive.DEAD) {
+											p.type = Type.DEAD;
+											players.get(k).connection.sendPacketToClient(p);
+											players.get(k).status = isAlive.SPECTATE;
+										} else if (players.get(k).status == isAlive.ALIVE) {
+											p.message = "You were damaged by a monster. Your life: "
+													+ players.get(k).life + "\n";
+											players.get(k).connection.sendPacketToClient(p);
+										}
 									}
 								}
 								if (diamond.position.getX() == currentX + i
 										&& diamond.position.getX() == currentY + j) {
 									diamond.takeDamage();
-									Packet p = new Packet();
-									p.type = Type.DIAMOND_LIFE;
-									p.diamondLife = diamond.health;
+
+									Packet p1 = new Packet();
+									p1.type = Type.DIAMOND_LIFE;
+									p1.diamondLife = diamond.life;
 									for (int k = 0; k < players.size(); k++) {
-										players.get(k).connection.sendPacketToClient(p);
+										players.get(k).connection.sendPacketToClient(p1);
+									}
+									if (diamond.life == 0) {
+										endGame();
 									}
 								}
 							}
 						}
 					}
 				}
-
 			}
 		}
 		return shot;
 	}
-	
+
 	public String displayBoard(ServerConnection sc) {
 		setCurrentPlayer(sc);
 		return board.display(players.get(currentPlayer).position);

@@ -65,6 +65,7 @@ public class Server {
 			Document document = documentBuilder.parse(file);
 			String portString = document.getElementsByTagName("portNumber").item(0).getTextContent();
 			port = Integer.parseInt(portString);
+			game = new Game(document);
 		} catch (ParserConfigurationException e1) {
 			e1.printStackTrace();
 		} catch (SAXException e) {
@@ -80,7 +81,6 @@ public class Server {
 		}
 	}
 	private void initiateConnections() {
-		game = new Game();
 		try {
 			while (shouldRun) {
 				Socket s = ss.accept();

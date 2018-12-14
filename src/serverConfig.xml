@@ -2,4 +2,12 @@
 <server>
 	<portNumber>3333</portNumber>
 	<connectionTimeout>15</connectionTimeout>
+	<gameConfig>
+		<playerLife>20</playerLife>
+		<playerAmmo>20</playerAmmo>
+		<monsterAmount>10</monsterAmount>
+		<boardColsNumber>20</boardColsNumber>
+		<boardRowsNumber>20</boardRowsNumber>
+		<diamondLife>10</diamondLife>
+	</gameConfig>
 </server>

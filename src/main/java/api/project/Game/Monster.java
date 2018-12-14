@@ -37,14 +37,14 @@ public class Monster extends Character {
 	}
 
 	@Override
-	public void setRandomPosition() {
+	public void setRandomPosition(int maxX, int maxY) {
 		Random rand = new Random();
 		int y;
-		int x = rand.nextInt(20);
-		if (x == 0 || x == 19) {
-			y = rand.nextInt(20);
+		int x = rand.nextInt(maxX+1);
+		if (x == 0 || x == maxX) {
+			y = rand.nextInt(maxY+1);
 		} else {
-			y = (rand.nextInt(2)) * 19;
+			y = (rand.nextInt(2)) * maxY;
 		}
 		position.setX(x);
 		position.setY(y);

@@ -165,13 +165,23 @@ public class Client implements KeyListener {
 						String sLife = Integer.toString(p.diamondLife);
 						diamond.setText(sLife);
 					}
+					if (p.type == Packet.Type.DEAD) {
+						removeKeyListener();
+						chat.textArea.append( "You are dead, You can only spactate now.\n");
+						chat.textArea.setCaretPosition(chat.textArea.getDocument().getLength());
+					}
+					if (p.type == Packet.Type.GAME_OVER) {
+						removeKeyListener();
+						chat.textArea.append( "You lost.\n");
+						chat.textArea.setCaretPosition(chat.textArea.getDocument().getLength());
+					}
+					
 					// gameTextArea.setSize(new Dimension(100,100));
 				} catch (ClassNotFoundException | IOException e) {
 					e.printStackTrace();
 				}
 			}
 			try {
-				System.out.println("Streams closing properly");
 				oin.close();
 				oout.close();
 				s.close();
@@ -311,5 +321,8 @@ public class Client implements KeyListener {
 //		} catch (IOException e1) {
 //			e1.printStackTrace();
 //		}
+	}
+	private void removeKeyListener() {
+		gameFrame.removeKeyListener(this);
 	}
 }

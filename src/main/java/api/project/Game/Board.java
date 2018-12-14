@@ -2,7 +2,7 @@ package api.project.Game;
 
 public class Board {
 	public enum fieldType {
-		BLANK, PLAYER, MONSTER, DIAMOND
+		BLANK, PLAYER, MONSTER, DIAMOND, GAME_OVER
 	}
 
 	private fieldType[][] fields;
@@ -45,6 +45,9 @@ public class Board {
 						result += " |   ";
 					}
 					if (fields[i][j] == fieldType.DIAMOND) {
+						result += " | D";
+					}
+					if (fields[i][j] == fieldType.GAME_OVER) {
 						result += " | X";
 					}
 				}

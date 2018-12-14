@@ -8,8 +8,13 @@ public class Player extends Character {
 	public ServerConnection connection;
 	public Weapon weapon;
 	public int life;
+	public enum isAlive {
+		ALIVE, DEAD, SPECTATE
+	}
+	public isAlive status;
 	
 	public Player(ServerConnection sc, int ammo, int life, int diamondLife) {
+		status = isAlive.ALIVE;
 		connection = sc;
 		weapon = new Weapon(ammo);
 		this.life = life;
@@ -33,10 +38,11 @@ public class Player extends Character {
 	}
 	
 	public void takeDamage() {
-		life--;
-	}
-	public boolean isAlive() {
-		return life > 0;
+		if(life > 0) life--;
+		if(life == 0) {
+			status = isAlive.DEAD;
+			life = -1;
+		}
 	}
 	
 	public void revive() {

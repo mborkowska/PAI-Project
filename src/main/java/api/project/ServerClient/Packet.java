@@ -18,7 +18,8 @@ public class Packet implements Serializable {
 		BOARD_UPDATE,
 		LIFE,
 		AMMO,
-		DIAMOND_LIFE
+		DIAMOND_LIFE,
+		DEAD
 	}
 	public Type type;
 	public String message;

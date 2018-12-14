@@ -1,18 +1,21 @@
 package api.project.Game;
 
 public class Diamond extends Character {
-	public int health = 50;
+	public int life;
 	
+	public Diamond(int life) {
+		this.life = life;
+	}
 	public void takeDamage() {
-		health--;
+		life--;
 	}
 	
 	public boolean isAlive() {
-		return health > 0;
+		return life > 0;
 	}
 	
 	@Override
-	public void setRandomPosition() {
+	public void setRandomPosition(int maxX, int maxY) {
 		position.setX(10);
 		position.setY(10);
 	}
